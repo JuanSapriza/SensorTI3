@@ -17,8 +17,7 @@ bool onlyOnce = true;
 int buttonState;
 
 void loop() {
-    RGB_t c = COLOR_getRGB();
     Serial.println (COLOR_getColorName()); // Se obtiene el nombre del color que esté viendo el sensor y se imprime en el monitor (Herramientas > Monitor Serial)
 
-    delay(1000);
+    delay(1000); // Este delay no es necesario si ya se incluyen otros delays en el programa que utilizan. Simplemente evita congestionar la consola. 
 }
