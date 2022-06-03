@@ -1,11 +1,24 @@
 #ifndef COLOR_H
 #define COLOR_H
 
+// pines donde están conectados los leds
+#define OUT_LED_EMB 3 // led embebido en el sensor
+#define OUT_LED_EXT 9 // led externo
+
+
+// intensidad de los leds. 0 es apagado, 255 es la máxima intensidad.
+#define LED_OFF 0
+#define LED_EMB_ON 32
+#define LED_EXT_ON 128
+
+
 #define MAX_HUE_ROJO 14
 #define MAX_HUE_NARANJA 30
 #define MAX_HUE_AMARILLO 60
 #define MAX_HUE_VERDE 150
 #define MAX_HUE_AZUL 270
+#define MAX_HUE_VIOLETA 355
+#define MAX_HUE_ROJO_2 360
 
 #define INDEX_OF_NAME_BLANCO 0
 #define INDEX_OF_NAME_NEGRO 1

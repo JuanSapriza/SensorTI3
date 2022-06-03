@@ -5,14 +5,22 @@
 
 Adafruit_TCS34725 colorSensor = Adafruit_TCS34725( TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X );
 
-const int COLOR_HUE[] = { MAX_HUE_ROJO, MAX_HUE_NARANJA, MAX_HUE_AMARILLO, MAX_HUE_VERDE, MAX_HUE_AZUL };
+const int COLOR_HUE[] = { MAX_HUE_ROJO, MAX_HUE_NARANJA, MAX_HUE_AMARILLO, MAX_HUE_VERDE, MAX_HUE_AZUL,  MAX_HUE_VIOLETA, MAX_HUE_ROJO_2};
 const int COLOR_ARRAY_LENGTH = sizeof (COLOR_HUE ) / sizeof (int );
 // Es importante que Blanco, Negro y Gris sean los primeros tres! Si se desea modificar hay que cambiar los defines "INDEX_OF"
 // Los colores deben estar en el mismo orden que están en COLOR_HUE
-const char* COLOR_NAME[] = { "BLANCO", "NEGRO", "GRIS", "ROJO", "NARANJA", "AMARILLO", "VERDE", "AZUL", };
+const char* COLOR_NAME[] = { "BLANCO", "NEGRO", "GRIS", "ROJO", "NARANJA", "AMARILLO", "VERDE", "AZUL", "VIOLETA", "ROJO"};
 
 /* Es necesario llamar esta función en setup() para inicializar el sensor */
 void COLOR_init( ){
+      //configuración de inputs y outputs  
+    pinMode(OUT_LED_EMB, OUTPUT);
+    pinMode(OUT_LED_EXT, OUTPUT);
+  
+    //leds inician apagados
+    analogWrite(OUT_LED_EMB, LED_OFF);
+    analogWrite(OUT_LED_EXT, LED_OFF);
+  
     colorSensor.begin( );
 }
 
@@ -46,6 +54,7 @@ int COLOR_getIndex( HSL_t p_hsl ){
         return INDEX_OF_NAME_GRIS;
     }
     // Dependiendo del hue devuelve el color correspondiente del array de colores
+    Serial.println(p_hsl.hue);
     for( int i = 0; i < COLOR_ARRAY_LENGTH; i++ ){
         if( p_hsl.hue <= COLOR_HUE[i] ){
             return i + INDEX_START_OF_COLORS;
@@ -89,6 +98,8 @@ RGB_t COLOR_getRGB( ){
 
     //Apagar el led de iluminacion integrado al sensor de color
     colorSensor.setInterrupt( false );
+    analogWrite(OUT_LED_EMB, LED_EMB_ON);
+    analogWrite(OUT_LED_EXT, LED_EXT_ON);
 
     // Toma al menos 60ms obtener un color
     delay( 60 );
@@ -98,11 +109,17 @@ RGB_t COLOR_getRGB( ){
 
     //Encender el led integrado al sensor de color
     colorSensor.setInterrupt( true );
+    
+    analogWrite(OUT_LED_EMB, LED_OFF);
+    analogWrite(OUT_LED_EXT, LED_OFF);
 
     // Obtener Codigo RGB
     RGB_t rgb;
     rgb.red = ( ( ( float ) red / white ) ) * CHAR_MAX_VAL;
     rgb.green = ( ( ( float ) green / white ) ) * CHAR_MAX_VAL;
     rgb.blue = ( ( float ) blue / white ) * CHAR_MAX_VAL;
+    Serial.print (String(rgb.red) + ", ");
+    Serial.print(String(rgb.green)+ ", ");
+    Serial.println(String(rgb.blue));
     return rgb;
 }
