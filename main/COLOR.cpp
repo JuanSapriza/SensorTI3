@@ -1,41 +1,51 @@
 
 #include "COLOR.h"
-#include "Adafruit_TCS34725.h"
 #include "ColorConverterLib.h"
 
-Adafruit_TCS34725 colorSensor = Adafruit_TCS34725( TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X );
+//Adafruit_TCS34725 colorSensor = Adafruit_TCS34725( TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X );
+//Adafruit_TCS34725 colorSensor = Adafruit_TCS34725( TCS34725_INTEGRATIONTIME_154MS, TCS34725_GAIN_4X );
+static Adafruit_TCS34725 colorSensor = Adafruit_TCS34725( );
+static tcs34725IntegrationTime_t colorSensorIntegrationTime;
+static tcs34725Gain_t colorSensorGain;
 
-const int COLOR_HUE[] = { MAX_HUE_ROJO, MAX_HUE_NARANJA, MAX_HUE_AMARILLO, MAX_HUE_VERDE, MAX_HUE_AZUL,  MAX_HUE_VIOLETA, MAX_HUE_ROJO_2};
+
+const int COLOR_HUE[] = { MAX_HUE_ROJO, MAX_HUE_NARANJA, MAX_HUE_AMARILLO, MAX_HUE_VERDE, MAX_HUE_AZUL, MAX_HUE_VIOLETA, MAX_HUE_ROJO_2 };
 const int COLOR_ARRAY_LENGTH = sizeof (COLOR_HUE ) / sizeof (int );
 // Es importante que Blanco, Negro y Gris sean los primeros tres! Si se desea modificar hay que cambiar los defines "INDEX_OF"
 // Los colores deben estar en el mismo orden que están en COLOR_HUE
-const char* COLOR_NAME[] = { "BLANCO", "NEGRO", "GRIS", "ROJO", "NARANJA", "AMARILLO", "VERDE", "AZUL", "VIOLETA", "ROJO"};
+const char* COLOR_NAME[] = { "BLANCO", "NEGRO", "GRIS", "ROJO", "NARANJA", "AMARILLO", "VERDE", "AZUL", "VIOLETA", "ROJO" };
 
 /* Es necesario llamar esta función en setup() para inicializar el sensor */
-void COLOR_init( ){
-      //configuración de inputs y outputs  
-    pinMode(OUT_LED_EMB, OUTPUT);
-    pinMode(OUT_LED_EXT, OUTPUT);
-  
+void COLOR_init( tcs34725IntegrationTime_t p_integrationTime, tcs34725Gain_t p_gain ){
+    colorSensorIntegrationTime = p_integrationTime;
+    colorSensorGain = p_gain;
+
+    colorSensor.setIntegrationTime( colorSensorIntegrationTime );
+    colorSensor.setGain( colorSensorGain );
+
+    //configuración de inputs y outputs  
+    pinMode( OUT_LED_EMB, OUTPUT );
+    pinMode( OUT_LED_EXT, OUTPUT );
+
     //leds inician apagados
-    analogWrite(OUT_LED_EMB, LED_OFF);
-    analogWrite(OUT_LED_EXT, LED_OFF);
-  
+    analogWrite( OUT_LED_EMB, LED_OFF );
+    analogWrite( OUT_LED_EXT, LED_OFF );
+
     colorSensor.begin( );
 }
 
 /* Esta función es la más directa de usar. Simplemente entrega el nombre del color luego de observarlo*/
-char * COLOR_getColorName(){
-    RGB_t colorInRGB = COLOR_getRGB();
+char * COLOR_getColorName( LIGHT_SOURCE_t p_lightSource ){
+    RGB_t colorInRGB = COLOR_getRGB( p_lightSource );
     HSL_t colorInHSL = COLOR_getHSLfromRGB( colorInRGB );
     int index = COLOR_getIndex( colorInHSL );
-    return COLOR_getNameFromIndex(index);
+    return COLOR_getNameFromIndex( index );
 }
 
 /* Esta función devuelve un nombre amigable del color que se le pasa.
  Toma como entrada el índice del color dentro de COLOR_HUE[] */
 char* COLOR_getNameFromIndex( int p_index ){
-    if( p_index >= 0 && p_index < sizeof(COLOR_NAME) ) return COLOR_NAME[ p_index ];
+    if( p_index >= 0 && p_index < sizeof (COLOR_NAME ) ) return COLOR_NAME[ p_index ];
     return "DESCONOCIDO";
 }
 
@@ -54,7 +64,7 @@ int COLOR_getIndex( HSL_t p_hsl ){
         return INDEX_OF_NAME_GRIS;
     }
     // Dependiendo del hue devuelve el color correspondiente del array de colores
-    Serial.println(p_hsl.hue);
+    Serial.println( p_hsl.hue );
     for( int i = 0; i < COLOR_ARRAY_LENGTH; i++ ){
         if( p_hsl.hue <= COLOR_HUE[i] ){
             return i + INDEX_START_OF_COLORS;
@@ -85,41 +95,33 @@ HSL_t COLOR_getHSLfromRGB( RGB_t p_rgb ){
     return hsl;
 }
 
-
 /**
    Obtiene el color RGB del Sensor
  */
-RGB_t COLOR_getRGB( ){
+RGB_t COLOR_getRGB( LIGHT_SOURCE_t p_lightSource ){
 
     uint16_t white;
     uint16_t red;
     uint16_t green;
     uint16_t blue;
 
-    //Apagar el led de iluminacion integrado al sensor de color
-    colorSensor.setInterrupt( false );
-    analogWrite(OUT_LED_EMB, LED_EMB_ON);
-    analogWrite(OUT_LED_EXT, LED_EXT_ON);
+    // Enciende las fuentes de luz que se hayan solicitado
+    analogWrite( OUT_LED_EMB, ( LIGHT_SOURCE_EMB & p_lightSource ) ? LED_EMB_INTENSITY : LED_OFF );
+    analogWrite( OUT_LED_EXT, ( LIGHT_SOURCE_EXT & p_lightSource ) ? LED_EMB_INTENSITY : LED_OFF );
 
-    // Toma al menos 60ms obtener un color
-    delay( 60 );
+    // Dejar al menos el tiempo de integración
+    delay( 2 * colorSensorIntegrationTime );
 
     //Obtenemos los colores del sensor
     colorSensor.getRawData( &red, &green, &blue, &white );
 
-    //Encender el led integrado al sensor de color
-    colorSensor.setInterrupt( true );
-    
-    analogWrite(OUT_LED_EMB, LED_OFF);
-    analogWrite(OUT_LED_EXT, LED_OFF);
+    analogWrite( OUT_LED_EMB, LED_OFF );
+    analogWrite( OUT_LED_EXT, LED_OFF );
 
     // Obtener Codigo RGB
     RGB_t rgb;
     rgb.red = ( ( ( float ) red / white ) ) * CHAR_MAX_VAL;
     rgb.green = ( ( ( float ) green / white ) ) * CHAR_MAX_VAL;
     rgb.blue = ( ( float ) blue / white ) * CHAR_MAX_VAL;
-    Serial.print (String(rgb.red) + ", ");
-    Serial.print(String(rgb.green)+ ", ");
-    Serial.println(String(rgb.blue));
     return rgb;
 }

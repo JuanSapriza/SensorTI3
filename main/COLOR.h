@@ -1,15 +1,17 @@
 #ifndef COLOR_H
 #define COLOR_H
 
+#include "Adafruit_TCS34725.h"
+
 // pines donde están conectados los leds
 #define OUT_LED_EMB 3 // led embebido en el sensor
-#define OUT_LED_EXT 9 // led externo
+#define OUT_LED_EXT 2 // led externo
 
 
 // intensidad de los leds. 0 es apagado, 255 es la máxima intensidad.
 #define LED_OFF 0
-#define LED_EMB_ON 32
-#define LED_EXT_ON 128
+#define LED_EMB_INTENSITY 32
+#define LED_EXT_INTENSITY 128
 
 
 #define MAX_HUE_ROJO 14
@@ -39,6 +41,14 @@
 
 #define UNKOWN_COLOR -1
 
+typedef enum {
+    LIGHT_SOURCE_OFF  =  0b00000000,
+    LIGHT_SOURCE_EMB  =  0b00000001,
+    LIGHT_SOURCE_EXT  =  0b00000010,
+    LIGHT_SOURCE_BOTH =  0b00000011,
+} LIGHT_SOURCE_t;
+
+
 /**
  * Estructura para almacenar la informacion RGB del color
  */
@@ -58,11 +68,11 @@ typedef struct{
 } HSL_t;
 
 
-void COLOR_init( );
-char * COLOR_getColorName();
+void COLOR_init(  tcs34725IntegrationTime_t p_integrationTime, tcs34725Gain_t p_gain );
+char * COLOR_getColorName( LIGHT_SOURCE_t p_lightSource );
 char* COLOR_getNameFromIndex( int p_index );
 int COLOR_getIndex( HSL_t p_hsl );
-RGB_t COLOR_getRGB( );
+RGB_t COLOR_getRGB( LIGHT_SOURCE_t p_lightSource );
 HSL_t COLOR_getHSLfromRGB( RGB_t p_rgb );
 
 #endif /* COLOR_H */
